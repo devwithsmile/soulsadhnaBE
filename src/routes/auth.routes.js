@@ -1,5 +1,5 @@
 import express from 'express';
-import { register, login, googleAuth, forgotPassword, resetPassword, getProfile } from '../controllers/auth.controller.js';
+import { register, login, googleAuth, forgotPassword, resetPassword } from '../controllers/auth.controller.js';
 import { authenticateUser } from '../middleware/auth.middleware.js';
 
 const router = express.Router();
@@ -75,19 +75,6 @@ router.post('/forgot', (req, res, next) => {
  */
 router.post('/reset', (req, res, next) => {
     resetPassword(req, res).catch(next);
-});
-
-/**
- * @swagger
- * /api/user/profile:
- *   get:
- *     summary: Get user profile
- *     tags: [Auth]
- *     security:
- *       - bearerAuth: []
- */
-router.get('/profile', authenticateUser, (req, res, next) => {
-    getProfile(req, res).catch(next);
 });
 
 

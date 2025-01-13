@@ -14,64 +14,86 @@ const oauth2Client = new google.auth.OAuth2(
 
 
 const VALID_ROLES = ['admin', 'user'];
+
+// Add password validation helper
+const isPasswordValid = (password) => {
+  return password.length >= 8 &&
+    /[A-Z]/.test(password) &&
+    /[a-z]/.test(password) &&
+    /[0-9]/.test(password) &&
+    /[^A-Za-z0-9]/.test(password);
+};
+
 export const register = async (req, res) => {
   try {
-    console.log('Registration request body:', req.body); // Log request body
 
     const { email, password, name } = req.body;
-    
-    // Validate input
-    if (!email || !password || !name) {
-      console.log('Missing required fields');
-      return res.status(400).json({ 
-        message: 'Please provide email, password and name',
-        received: { email, password: '***', name }
+   
+    // Sanitize the email input
+    const sanitizedEmail = validator.normalizeEmail(email);
+
+
+    // Enhanced input validation
+    if (!sanitizedEmail || !password || !name) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Please provide email, password and name'
       });
     }
 
-    console.log('Checking for existing user...'); // Log step
-    const existingUser = await User.findOne({ email });
+    if (!validator.isEmail(sanitizedEmail)) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Invalid email format'
+      });
+    }
+
+    if (!isPasswordValid(password)) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Password must be at least 8 characters long and contain uppercase, lowercase, number and special character'
+      });
+    }
+
+    const existingUser = await User.findOne({ email: sanitizedEmail });
     if (existingUser) {
-      console.log('User already exists');
       return res.status(400).json({ message: 'User already exists' });
     }
 
-    console.log('Hashing password...'); // Log step
     const hashedPassword = await bcrypt.hash(password, 10);
-    
-    console.log('Creating user...'); // Log step
+
     const user = await User.create({
-      email,
+      email: sanitizedEmail,
       password: hashedPassword,
       name
     });
 
-    console.log('Generating token...'); // Log step
     const token = jwt.sign(
-      { id: user._id, email: user.email, role: user.role },
+      { id: user._id, email: user.email },
       process.env.JWT_SECRET,
       { expiresIn: '24h' }
     );
 
-    console.log('Registration successful'); // Log success
+    await sendTemplatedEmail(sanitizedEmail, 'welcome', {
+      userName: name || email.split('@')[0] || email,
+    });
+
     res.status(201).json({ token });
   } catch (error) {
-    console.error('Registration error details:', {
-      message: error.message,
-      stack: error.stack,
-      name: error.name
-    });
-    
-    res.status(500).json({ 
+    // Improved error handling
+    const errorResponse = {
+      status: 'error',
       message: 'Registration failed',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    };
+    res.status(500).json(errorResponse);
   }
 };
 
-export const login = (role) => async (req, res) => {
+export const login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    let { email, password } = req.body;
+
 
     // Sanitize email
     email = validator.normalizeEmail(email);
@@ -82,6 +104,7 @@ export const login = (role) => async (req, res) => {
     }
 
     const user = await User.findOne({ email });
+
     if (!user) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
@@ -91,25 +114,20 @@ export const login = (role) => async (req, res) => {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    if (user.role !== role) {
-      return res
-        .status(403)
-        .json({ global: `Access denied. User is not a ${role}.` });
-    }
-
     const token = jwt.sign(
-      { id: user._id, email: user.email, role: user.role },
+      { id: user._id, email: user.email },
       process.env.JWT_SECRET,
       { expiresIn: '24h' }
     );
 
     res.json({ token });
   } catch (error) {
+    console.error('Login error:', error);
     res.status(500).json({ message: 'Login failed' });
   }
 };
 
-export const googleAuth = (role) => async (req, res) => {
+export const googleAuth = async (req, res) => {
   try {
     const { code } = req.body;
 
@@ -125,13 +143,12 @@ export const googleAuth = (role) => async (req, res) => {
         email: data.email,
         name: data.name,
         googleId: data.id,
-        role: role,
         password: await bcrypt.hash(Math.random().toString(36), 10)
       });
     }
 
     const token = jwt.sign(
-      { id: user._id, email: user.email, role: user.role },
+      { id: user._id, email: user.email },
       process.env.JWT_SECRET,
       { expiresIn: '24h' }
     );
@@ -145,60 +162,89 @@ export const googleAuth = (role) => async (req, res) => {
 export const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
-    const user = await User.findOne({ email });
 
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+    // Validate email
+    if (!email || !validator.isEmail(email)) {
+      return res.status(400).json({ message: 'Valid email is required' });
     }
 
+    // Normalize email before searching
+    const normalizedEmail = validator.normalizeEmail(email);
+    
+    // Simulate consistent processing time to prevent timing attacks
+    const [user] = await Promise.all([
+      User.findOne({ email: normalizedEmail }),
+      new Promise(resolve => setTimeout(resolve, 100)) // Add consistent delay
+    ]);
+
+    // Always create a token (even if user doesn't exist) to ensure consistent timing
     const resetToken = jwt.sign(
-      { id: user._id },
+      {
+        id: user?._id || 'dummy-id',
+        type: 'password_reset'
+      },
       process.env.JWT_SECRET,
       { expiresIn: '1h' }
     );
 
-    // Send email with reset link (implement email service)
-    // Send the reset email with the JWT token
-    const resetLink = `${config.GENERAL_CONFIG.REDIRECT_URL}/resetpassword?token=${resetToken}`;
-    await sendTemplatedEmail(email, 'passwordReset', {
-      userName: user?.full_name || email.split('@')[0],
-      resetLink,
-    });
+    if (user) {
+      const resetLink = `${config.GENERAL_CONFIG.REDIRECT_URL}/reset-password?token=${resetToken}`;
+      
+      await sendTemplatedEmail(normalizedEmail, 'passwordReset', {
+        userName: user.name || user.full_name || email.split('@')[0],
+        resetLink,
+        expiryTime: '1 hour'
+      });
+    }
 
-    res.json({ message: 'Password reset link sent to email' });
+    // Same response whether user exists or not
+    res.status(200).json({
+      message: 'If a user with this email exists, they will receive password reset instructions.'
+    });
   } catch (error) {
+    console.error('Password reset request error:', error);
     res.status(500).json({ message: 'Failed to process request' });
   }
 };
 
 export const resetPassword = async (req, res) => {
   try {
-    const { token, newPassword } = req.body;
-    // Validate input fields
-    if (validator.isEmpty(newPasswordrd)) {
+    const { newPassword, token } = req.body;
+
+    // Enhanced password validation
+    if (!isPasswordValid(newPassword)) {
       return res.status(400).json({
-        errors: {
-          global: 'New password is required.',
-        },
+        status: 'error',
+        message: 'Password must be at least 8 characters long and contain uppercase, lowercase, number and special character'
       });
     }
 
-    // Validate token
-    if (validator.isEmpty(token)) {
-      return res.status(400).json({
-        errors: {
-          global: 'Reset token is required.',
-        },
-      });
-    }
-
-
+    // Verify token type
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.id);
-
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+    if (decoded.type !== 'password_reset') {
+      return res.status(401).json({
+        status: 'error',
+        message: 'Invalid token type'
+      });
     }
+
+    const user = await User.findById(decoded.id);
+    if (!user) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'User not found'
+      });
+    }
+
+    // Check if new password is same as old password
+    const isSamePassword = await bcrypt.compare(newPassword, user.password);
+    if (isSamePassword) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'New password must be different from the current password'
+      });
+    }
+
     // Hash the new password
     const salt = await bcrypt.genSalt(12);
     const hashedPassword = await bcrypt.hash(newPassword, salt);
@@ -208,18 +254,12 @@ export const resetPassword = async (req, res) => {
 
     res.json({ message: 'Password reset successful' });
   } catch (error) {
-    res.status(500).json({ message: 'Password reset failed' });
-  }
-};
-
-export const getProfile = async (req, res) => {
-  try {
-    const user = await User.findById(req.user.id).select('-password');
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-    res.json(user);
-  } catch (error) {
-    res.status(500).json({ message: 'Failed to fetch profile' });
+    // Consistent error response
+    const errorResponse = {
+      status: 'error',
+      message: 'Password reset failed',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    };
+    res.status(500).json(errorResponse);
   }
 };
