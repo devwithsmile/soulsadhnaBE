@@ -13,16 +13,27 @@ const eventSchema = new mongoose.Schema({
     type: Date,
     required: true,
   },
+  startTime: {
+    type: String,
+    required: true,
+  },
+  endTime: {
+    type: String,
+    required: true,
+  },
   price: {
     type: Number,
     required: true,
   },
-  meetLink: String,
-  calendarEventId: String,
+  meetLink: {
+    type: String,
+  },
+  calendarEventId: {
+    type: String,
+  },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: true,
   },
   createdAt: {
     type: Date,
