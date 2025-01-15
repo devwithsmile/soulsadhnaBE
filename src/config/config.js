@@ -1,0 +1,22 @@
+import dotenv from 'dotenv'
+
+dotenv.config()
+
+// SendGrid Configuration
+const EMAIL_CONFIG = {
+    ADMIN_EMAIL: process.env.ADMIN_EMAIL_ADDRESS,
+    SENDGRID_API_KEY: process.env.SENDGRID_API_KEY,
+}
+
+// General Configuration
+const GENERAL_CONFIG = {
+    BASE_URL: process.env.BASE_URL,
+    REDIRECT_URL: process.env.REDIRECT_URL,
+    PORT: process.env.PORT || 3000,
+    PLATFORM_NAME: process.env.PLATFORM_NAME,
+}
+
+export default {
+    EMAIL_CONFIG,
+    GENERAL_CONFIG
+}
