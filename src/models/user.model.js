@@ -24,6 +24,11 @@ const userSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+  paymentStatus: {
+    type: String,
+    enum: ['paid', 'unpaid', 'pending'],
+    default: 'unpaid',
+  },
 });
 
 export default mongoose.model('User', userSchema);
