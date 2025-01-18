@@ -20,7 +20,7 @@ process.setMaxListeners(20);
 
 // Middleware
 app.use(helmet());
-app.use(cors({origin: true, credentials: true}));
+app.use(cors({ origin: true, credentials: true }));
 app.use(requestLogger);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
@@ -33,6 +33,14 @@ app.use('/api/auth', authRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/admin', adminRoutes);
 // app.use('/api/payments', paymentRoutes); // commented out
+
+
+app.get('/', (req, res) => {
+    console.log('Application working fine');
+    res.status(200).send('Application working fine');
+});
+
+
 
 // Error Handler
 app.use(errorHandler);
