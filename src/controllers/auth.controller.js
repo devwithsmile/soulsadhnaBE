@@ -129,6 +129,7 @@ export const login = async (req, res) => {
 
 export const googleAuth = async (req, res) => {
   try {
+    console.log(" inside googleAuth");
     const { code } = req.body;
     console.log(code);
     
@@ -148,6 +149,7 @@ export const googleAuth = async (req, res) => {
 
     // First try to find user by googleId
     let user = await User.findOne({ googleId: data.id });
+    console.log(data);
     
     // If not found by googleId, try email
     if (!user) {
