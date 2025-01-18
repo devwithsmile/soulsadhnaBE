@@ -1,11 +1,24 @@
 import Event from '../models/event.model.js';
 import Payment from '../models/payment.model.js';
 import { calendar } from '../config/google.js';
+import moment from 'moment';
 
 export const listEvents = async (req, res) => {
   try {
-    const events = await Event.find().sort('-date');
-    res.json(events);
+    const today = moment().startOf('day').toDate();
+
+    const events = await Event.find({
+      date: { $gte: today }
+    }).sort('date');
+
+    // Format the date in the response
+    const formattedEvents = events.map(event => {
+      const eventObj = event.toObject();
+      eventObj.date = moment(event.date).format('DD-MM-YYYY');
+      return eventObj;
+    });
+
+    res.json(formattedEvents);
   } catch (error) {
     res.status(500).json({ message: 'Failed to fetch events' });
   }
@@ -17,7 +30,13 @@ export const getEventDetails = async (req, res) => {
     if (!event) {
       return res.status(404).json({ message: 'Event not found' });
     }
-    res.json(event);
+
+    // Format the date in the response
+    const formattedEvent = event.toObject();
+    formattedEvent.date = moment(event.date).format('DD-MM-YYYY');
+
+
+    res.json(formattedEvent);
   } catch (error) {
     res.status(500).json({ message: 'Failed to fetch event details' });
   }
