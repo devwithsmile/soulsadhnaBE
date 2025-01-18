@@ -130,6 +130,15 @@ export const login = async (req, res) => {
 export const googleAuth = async (req, res) => {
   try {
     const { code } = req.body;
+    console.log(code);
+    
+    // Validate input
+    if (!code) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Authorization code is required'
+      });
+    }
 
     const { tokens } = await oauth2Client.getToken(code);
     oauth2Client.setCredentials(tokens);
@@ -137,25 +146,54 @@ export const googleAuth = async (req, res) => {
     const oauth2 = google.oauth2({ version: 'v2', auth: oauth2Client });
     const { data } = await oauth2.userinfo.get();
 
-    let user = await User.findOne({ email: data.email });
+    // First try to find user by googleId
+    let user = await User.findOne({ googleId: data.id });
+    
+    // If not found by googleId, try email
     if (!user) {
-      user = await User.create({
-        email: data.email,
-        name: data.name,
-        googleId: data.id,
-        password: await bcrypt.hash(Math.random().toString(36), 10)
-      });
+      user = await User.findOne({ email: data.email });
+      
+      if (user) {
+        // If user exists with email but no googleId, link the accounts
+        user.googleId = data.id;
+        await user.save();
+      } else {
+        // Create new user
+        user = await User.create({
+          email: data.email,
+          name: data.name,
+          googleId: data.id,
+          password: await bcrypt.hash(Math.random().toString(36), 10)
+        });
+      }
     }
 
     const token = jwt.sign(
-      { id: user._id, email: user.email,role: user.role },
+      { id: user._id, email: user.email, role: user.role },
       process.env.JWT_SECRET,
       { expiresIn: '24h' }
     );
 
-    res.json({ token });
+    res.json({ 
+      status: 'success',
+      token 
+    });
   } catch (error) {
-    res.status(500).json({ message: 'Google authentication failed' });
+    console.error('Google authentication error:', error);
+    
+    // Handle specific errors
+    if (error.code === 'invalid_grant') {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Invalid or expired authorization code'
+      });
+    }
+
+    res.status(500).json({
+      status: 'error',
+      message: 'Google authentication failed',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 };
 
