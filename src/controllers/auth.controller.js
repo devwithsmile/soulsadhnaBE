@@ -28,7 +28,7 @@ export const register = async (req, res) => {
   try {
 
     const { email, password, name } = req.body;
-   
+
     // Sanitize the email input
     const sanitizedEmail = validator.normalizeEmail(email);
 
@@ -69,7 +69,7 @@ export const register = async (req, res) => {
     });
 
     const token = jwt.sign(
-      { id: user._id, email: user.email, role: user.role },
+      { id: user._id, email: user.email, role: user.role, name: user.name },
       process.env.JWT_SECRET,
       { expiresIn: '24h' }
     );
@@ -115,7 +115,7 @@ export const login = async (req, res) => {
     }
 
     const token = jwt.sign(
-      { id: user._id, email: user.email ,role: user.role},
+      { id: user._id, email: user.email, role: user.role, name: user.name },
       process.env.JWT_SECRET,
       { expiresIn: '24h' }
     );
@@ -132,7 +132,7 @@ export const googleAuth = async (req, res) => {
     console.log(" inside googleAuth");
     const { code } = req.body;
     console.log(code);
-    
+
     // Validate input
     if (!code) {
       return res.status(400).json({
@@ -150,11 +150,11 @@ export const googleAuth = async (req, res) => {
     // First try to find user by googleId
     let user = await User.findOne({ googleId: data.id });
     console.log(data);
-    
+
     // If not found by googleId, try email
     if (!user) {
       user = await User.findOne({ email: data.email });
-      
+
       if (user) {
         // If user exists with email but no googleId, link the accounts
         user.googleId = data.id;
@@ -171,18 +171,18 @@ export const googleAuth = async (req, res) => {
     }
 
     const token = jwt.sign(
-      { id: user._id, email: user.email, role: user.role },
+      { id: user._id, email: user.email, role: user.role, name: user.name },
       process.env.JWT_SECRET,
       { expiresIn: '24h' }
     );
 
-    res.json({ 
+    res.json({
       status: 'success',
-      token 
+      token
     });
   } catch (error) {
     console.error('Google authentication error:', error);
-    
+
     // Handle specific errors
     if (error.code === 'invalid_grant') {
       return res.status(400).json({
@@ -210,7 +210,7 @@ export const forgotPassword = async (req, res) => {
 
     // Normalize email before searching
     const normalizedEmail = validator.normalizeEmail(email);
-    
+
     // Simulate consistent processing time to prevent timing attacks
     const [user] = await Promise.all([
       User.findOne({ email: normalizedEmail }),
@@ -229,7 +229,7 @@ export const forgotPassword = async (req, res) => {
 
     if (user) {
       const resetLink = `${config.GENERAL_CONFIG.REDIRECT_URL}/reset-password?token=${resetToken}`;
-      
+
       await sendTemplatedEmail(normalizedEmail, 'passwordReset', {
         userName: user.name || user.full_name || email.split('@')[0],
         resetLink,
