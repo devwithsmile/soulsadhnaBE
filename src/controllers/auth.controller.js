@@ -5,6 +5,7 @@ import User from '../models/user.model.js';
 import validator from 'validator';
 import { sendTemplatedEmail } from '../utils/emailUtils.js';
 import config from '../config/config.js';
+import crypto from 'crypto';
 
 const oauth2Client = new google.auth.OAuth2(
   process.env.GOOGLE_CLIENT_ID,
@@ -129,11 +130,8 @@ export const login = async (req, res) => {
 
 export const googleAuth = async (req, res) => {
   try {
-    console.log(" inside googleAuth");
     const { code } = req.body;
-    console.log(code);
 
-    // Validate input
     if (!code) {
       return res.status(400).json({
         status: 'error',
@@ -141,15 +139,27 @@ export const googleAuth = async (req, res) => {
       });
     }
 
-    const { tokens } = await oauth2Client.getToken(code);
-    oauth2Client.setCredentials(tokens);
+    try {
+      const { tokens } = await oauth2Client.getToken(code);
+      oauth2Client.setCredentials(tokens);
+    } catch (tokenError) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Invalid or expired authorization code. Please try logging in again.',
+        details: process.env.NODE_ENV === 'development' ? 'Authorization code can only be used once and expires quickly' : undefined
+      });
+    }
 
     const oauth2 = google.oauth2({ version: 'v2', auth: oauth2Client });
     const { data } = await oauth2.userinfo.get();
 
+    // Validate required Google data
+    if (!data.email || !data.id) {
+      throw new Error('Incomplete user data received from Google');
+    }
+
     // First try to find user by googleId
     let user = await User.findOne({ googleId: data.id });
-    console.log(data);
 
     // If not found by googleId, try email
     if (!user) {
@@ -160,12 +170,13 @@ export const googleAuth = async (req, res) => {
         user.googleId = data.id;
         await user.save();
       } else {
-        // Create new user
+        // Create new user with a strong random password
+        const randomPassword = crypto.randomBytes(32).toString('hex');
         user = await User.create({
           email: data.email,
-          name: data.name,
+          name: data.name || data.email.split('@')[0],
           googleId: data.id,
-          password: await bcrypt.hash(Math.random().toString(36), 10)
+          password: await bcrypt.hash(randomPassword, 12)
         });
       }
     }
@@ -182,14 +193,6 @@ export const googleAuth = async (req, res) => {
     });
   } catch (error) {
     console.error('Google authentication error:', error);
-
-    // Handle specific errors
-    if (error.code === 'invalid_grant') {
-      return res.status(400).json({
-        status: 'error',
-        message: 'Invalid or expired authorization code'
-      });
-    }
 
     res.status(500).json({
       status: 'error',
