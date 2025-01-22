@@ -27,7 +27,7 @@ const isPasswordValid = (password) => {
 
 export const register = async (req, res) => {
   try {
-
+    console.log(" inside register");
     const { email, password, name } = req.body;
 
     // Sanitize the email input
@@ -48,7 +48,7 @@ export const register = async (req, res) => {
         message: 'Invalid email format'
       });
     }
-
+    console.log(" email", sanitizedEmail, "password", password, "name", name);
     if (!isPasswordValid(password)) {
       return res.status(400).json({
         status: 'error',
@@ -74,7 +74,7 @@ export const register = async (req, res) => {
       process.env.JWT_SECRET,
       { expiresIn: '24h' }
     );
-
+    console.log(" token", token);
     await sendTemplatedEmail(sanitizedEmail, 'welcome', {
       userName: name || email.split('@')[0] || email,
     });
@@ -87,6 +87,7 @@ export const register = async (req, res) => {
       message: 'Registration failed',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined
     };
+    console.log(" errorResponse", errorResponse);
     res.status(500).json(errorResponse);
   }
 };

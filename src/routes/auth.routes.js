@@ -47,6 +47,7 @@ const router = express.Router();
  *         description: Internal server error
  */
 router.post('/register', (req, res, next) => {
+    console.log(" inside register route");
     register(req, res).catch(next);
 });
 
