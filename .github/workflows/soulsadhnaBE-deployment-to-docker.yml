@@ -31,6 +31,6 @@ jobs:
           context: .
           push: true
           tags: |
-            devwithsmile007/soulsadhana:latest
-           
+            devwithsmile007/soulsadhana/ssbe:latest
+            devwithsmile007/soulsadhana/ssbe:${{ github.sha }}
 
