@@ -22,13 +22,16 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build Docker image
-        run: docker build -t devwithsmile007/soulsadhanaBE:latest .
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-      - name: Push Docker image to Docker Hub
-        run: docker push devwithsmile007/soulsadhanaBE:latest
-
-      - name: Run Docker image
-        run: docker run -d -p 3000:3000 devwithsmile007/soulsadhanaBE:latest
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            devwithsmile007/soulsadhanaBE:latest
+            devwithsmile007/soulsadhanaBE:${{ github.sha }}
 
 
