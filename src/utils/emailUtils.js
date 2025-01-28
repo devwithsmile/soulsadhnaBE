@@ -1,58 +1,60 @@
-import sgMail from '@sendgrid/mail';
-import config from '../config/config.js'
+import AWS from 'aws-sdk';
+import config from '../config/config.js';
 
-sgMail.setApiKey(config.EMAIL_CONFIG.SENDGRID_API_KEY);
+// Configure AWS SES
+AWS.config.update({
+  accessKeyId: config.AWS_CONFIG.AWS.ACCESS_KEY_ID,
+  secretAccessKey: config.AWS_CONFIG.AWS.SECRET_ACCESS_KEY,
+  region: config.AWS_CONFIG.AWS.REGION,
+});
 
-/* reason should be an array 
-sendTemplatedEmail('user@example.com', 'resubmission', {
-  userName: 'John Doe',
-  reasons: [
-    'Incomplete business information',
-    'Missing required documents',
-    'Invalid contact details',
-  ],
-}); */
+
+const ses = new AWS.SES();
 
 /**
- * Send an email using SendGrid
+ * Send an email using Amazon SES
  * @param {string | Array<string>} to - The email address[es] to send the email to
  * @param {string} subject - The subject of the email
  * @param {string} text - The plain text content of the email
  * @param {string} html - The HTML content of the email
- * @returns {Promise<object|null>} - The response from SendGrid or null if an error occurred
+ * @returns {Promise<object|null>} - The response from SES or null if an error occurred
  */
 const sendEmail = async (to, subject, text, html) => {
-  const msg = {
-    to,
-    from: config.EMAIL_CONFIG.ADMIN_EMAIL,
-    subject,
-    text,
-    html,
+  const params = {
+    Source: config.EMAIL_CONFIG.ADMIN_EMAIL,
+    Destination: {
+      ToAddresses: Array.isArray(to) ? to : [to],
+    },
+    Message: {
+      Subject: {
+        Data: subject,
+      },
+      Body: {
+        Text: {
+          Data: text,
+        },
+        Html: {
+          Data: html,
+        },
+      },
+    },
   };
 
   try {
-    const response = await sgMail.send(msg);
+    const response = await ses.sendEmail(params).promise();
     return response;
   } catch (error) {
-    const errorMessage = error.response ? error.response.body : error.message;
-    console.error('Error sending email:', errorMessage);
+    console.error('Error sending email:', error.message);
     return null;
   }
 };
-
-/**
- * Example Usage:
- * sendTemplatedEmail('test@example.com', 'welcome', { userName: 'John Doe' });
- * sendTemplatedEmail('test@example.com', 'passwordReset', { userName: 'John Doe', resetLink: 'https://example.com/reset' });
- * sendTemplatedEmail('test@example.com', 'accountVerification', { userName: 'John Doe', verificationLink: 'https://example.com/verify' });
- */
 
 /**
  * Send an email using a template
  * @param {string} to - The email address to send the email to
  * @param {string} templateType - The type of email template to use
  * @param {object} params - The parameters to pass to the email template
- * @returns {Promise<object|null>} - The response from SendGrid or null if an error occurred
+ * @returns {Promise<object|null>} - The response from SES or null if an error occurred
  */
 export const sendTemplatedEmail = async (to, templateType, params) => {
   const templateFunction = emailTemplates[templateType];
@@ -65,6 +67,7 @@ export const sendTemplatedEmail = async (to, templateType, params) => {
 };
 
 const platFormName = config.GENERAL_CONFIG.PLATFORM_NAME || 'Soulsadhna';
+
 /**
  * Email templates
  */
@@ -98,5 +101,5 @@ const emailTemplates = {
             <a href="${params.resetLink}" style="display: inline-block; padding: 10px 20px; font-size: 16px; color: #fff; background-color: #007BFF; text-decoration: none; border-radius: 5px;">Reset Password</a>
             <p>If you didn't request this password reset, please ignore this email.</p>
             <p>Best regards,<br>${platFormName} Team</p>`,
-  })
+  }),
 };

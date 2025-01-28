@@ -5,7 +5,7 @@ dotenv.config()
 // SendGrid Configuration
 const EMAIL_CONFIG = {
     ADMIN_EMAIL: process.env.ADMIN_EMAIL_ADDRESS,
-    SENDGRID_API_KEY: process.env.SENDGRID_API_KEY,
+    // SENDGRID_API_KEY: process.env.SENDGRID_API_KEY,
 }
 
 // General Configuration
@@ -16,7 +16,20 @@ const GENERAL_CONFIG = {
     PLATFORM_NAME: process.env.PLATFORM_NAME,
 }
 
+const AWS_CONFIG = {
+    EMAIL_CONFIG: {
+      ADMIN_EMAIL: process.env.ADMIN_EMAIL_ADDRESS,
+    },
+    AWS: {
+      ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID,
+      SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY,
+      REGION: process.env.AWS_REGION,
+    },
+  };
+  
+
 export default {
     EMAIL_CONFIG,
-    GENERAL_CONFIG
+    GENERAL_CONFIG,
+    AWS_CONFIG,
 }
