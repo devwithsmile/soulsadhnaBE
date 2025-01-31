@@ -2,7 +2,7 @@ name: Deploy to docker-hub
 run-name: Deploying to docker-hub , done by ${{ github.actor }}
 on:
   push:
-    branches: 
+    branches:
       - main
 
 jobs:
@@ -36,3 +36,29 @@ jobs:
           push: true
           tags: |
             devwithsmile007/soulsadhanabe:latest
+          secrets: |
+            MONGODB_URI=${{ secrets.MONGODB_URI }}
+            DATABASE=${{ secrets.DATABASE }}
+            JWT_SECRET=${{ secrets.JWT_SECRET }}
+
+            GOOGLE_CLIENT_ID= ${{ secrets.GOOGLE_CLIENT_ID }}
+            GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
+            USER_PROFILE_URL=${{ secrets.USER_PROFILE_URL }}
+
+            GOOGLE_REDIRECT_URI=${{ secrets.GOOGLE_REDIRECT_URI }}
+            GOOGLE_REFRESH_TOKEN=${{ secrets.GOOGLE_REFRESH_TOKEN }}
+
+            CASHFREE_API_KEY=${{ secrets.CASHFREE_API_KEY }}
+            CASHFREE_SECRET_KEY=${{ secrets.CASHFREE_SECRET_KEY }}
+            CASHFREE_APP_ID=${{ secrets.CASHFREE_APP_ID }}
+            CASHFREE_CLIENT_ID=${{ secrets.CASHFREE_CLIENT_ID }}
+            CASHFREE_CLIENT_SECRET=${{ secrets.CASHFREE_CLIENT_SECRET }}
+
+            PLATFORM_NAME=${{ secrets.PLATFORM_NAME }}
+
+            AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
+            AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            AWS_REGION=${{ secrets.AWS_REGION }}
+
+            ADMIN_EMAIL_ADDRESS=${{ secrets.ADMIN_EMAIL_ADDRESS }}
+            NODE_ENV=${{ secrets.NODE_ENV }}
