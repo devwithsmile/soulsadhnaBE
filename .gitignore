@@ -5,7 +5,9 @@ yarn-debug.log
 yarn-error.log
 
 # Environment variables
-.env.keys 
+.env
+.env.local
+.env.*.local
 
 # Build output
 dist/
@@ -55,6 +57,11 @@ temp/
 
 # Yarn Integrity file
 .yarn-integrity
+
+# dotenv environment variable files
+.env
+.env.test
+.env.production
 
 # parcel-bundler cache
 .cache
