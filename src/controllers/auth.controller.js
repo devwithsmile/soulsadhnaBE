@@ -198,7 +198,7 @@ export const googleAuth = async (req, res) => {
     res.status(500).json({
       status: 'error',
       message: 'Google authentication failed',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      details: error.message
     });
   }
 };
@@ -302,7 +302,7 @@ export const resetPassword = async (req, res) => {
     const errorResponse = {
       status: 'error',
       message: 'Password reset failed',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      details: error.message
     };
     res.status(500).json(errorResponse);
   }
