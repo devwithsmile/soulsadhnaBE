@@ -2,14 +2,14 @@ import AWS from 'aws-sdk';
 import config from '../config/config.js';
 
 // Configure AWS SES
-AWS.config.update({
+const SES_CONFIG = {
   accessKeyId: config.AWS_CONFIG.AWS.ACCESS_KEY_ID,
   secretAccessKey: config.AWS_CONFIG.AWS.SECRET_ACCESS_KEY,
   region: config.AWS_CONFIG.AWS.REGION,
-});
+};
 
 
-const ses = new AWS.SES();
+const SES = new AWS.SES(SES_CONFIG);
 
 /**
  * Send an email using Amazon SES
@@ -21,7 +21,7 @@ const ses = new AWS.SES();
  */
 const sendEmail = async (to, subject, text, html) => {
   const params = {
-    Source: config.EMAIL_CONFIG.ADMIN_EMAIL,
+    Source: config.AWS_CONFIG.EMAIL_CONFIG.ADMIN_EMAIL,
     Destination: {
       ToAddresses: Array.isArray(to) ? to : [to],
     },
@@ -41,7 +41,7 @@ const sendEmail = async (to, subject, text, html) => {
   };
 
   try {
-    const response = await ses.sendEmail(params).promise();
+    const response = await SES.sendEmail(params).promise();
     return response;
   } catch (error) {
     console.error('Error sending email:', error.message);
