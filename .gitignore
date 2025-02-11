@@ -6,7 +6,7 @@ yarn-error.log
 
 # Environment variables
 .env.keys 
-
+.env.local
 # Build output
 dist/
 build/

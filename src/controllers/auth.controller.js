@@ -74,7 +74,7 @@ export const register = async (req, res) => {
       process.env.JWT_SECRET,
       { expiresIn: '24h' }
     );
-    console.log(" token", token);
+    
     await sendTemplatedEmail(sanitizedEmail, 'welcome', {
       userName: name || email.split('@')[0] || email,
     });

@@ -1,5 +1,5 @@
 import express from 'express';
-import { listEvents, getEventDetails, bookEvent } from '../controllers/event.controller.js';
+import { listEvents, getEventDetails, bookEvent, paymentStatus } from '../controllers/event.controller.js';
 import { authenticateUser } from '../middleware/auth.middleware.js';
 
 const router = express.Router();
@@ -77,6 +77,9 @@ const router = express.Router();
  *                   example: Failed to fetch events
  */
 router.get('/', listEvents);
+
+router.get('/payments', authenticateUser, paymentStatus);
+
 
 /**
  * @swagger
@@ -183,5 +186,6 @@ router.get('/:id', getEventDetails);
  *                   example: Failed to book event
  */
 router.post('/:id/book', authenticateUser, bookEvent);
+
 
 export default router;

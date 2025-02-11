@@ -78,3 +78,23 @@ export const bookEvent = async (req, res) => {
     res.status(500).json({ message: 'Failed to book event' });
   }
 };
+
+export const paymentStatus = async (req, res) => {
+  const eventId = req.body.eventId;
+  const userEmail = req.user.email;
+
+  if (!eventId) {
+    return res.status(400).json({ message: 'Event ID is required' });
+  }
+  if (!userEmail) {
+    return res.status(400).json({ message: 'user credentials required' });
+  }
+    // const event = await Event.findById(eventId);
+    // if (!event) {
+    //   return res.status(404).json({ message: 'Event not found' });
+    // }
+
+   userEmail == "user1@gmail.com" ? res.json({ status: 'SUCCESS' }) : res.json({ status: 'FAILED' });
+    
+
+};
