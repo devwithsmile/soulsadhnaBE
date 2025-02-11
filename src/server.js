@@ -1,19 +1,15 @@
 import express from 'express';
 import cors from 'cors';
-import morgan from 'morgan';
 import swaggerUI from 'swagger-ui-express';
 import { specs } from './config/swagger.js';
-import { connectDB } from './config/database.js';
 import authRoutes from './routes/auth.routes.js';
 import eventRoutes from './routes/event.routes.js';
 import adminRoutes from './routes/admin.routes.js';
-// import paymentRoutes from './routes/payment.routes.js'; // commented out
 import { errorHandler } from './middleware/error.middleware.js';
 import helmet from 'helmet';
 import { requestLogger } from './middleware/logger.middleware.js';
 
 const app = express();
-const PORT = process.env.PORT || 3000;
 
 // Increase event emitter limit
 process.setMaxListeners(20);
@@ -32,7 +28,6 @@ app.use('/api-docs', swaggerUI.serve, swaggerUI.setup(specs));
 app.use('/api/auth', authRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/admin', adminRoutes);
-// app.use('/api/payments', paymentRoutes); // commented out
 
 
 app.get('/', (req, res) => {
