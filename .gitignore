@@ -84,3 +84,6 @@ Desktop.ini
 
 # Local Netlify folder
 .netlify 
+
+# AI
+.qodo

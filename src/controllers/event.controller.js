@@ -80,8 +80,10 @@ export const bookEvent = async (req, res) => {
 };
 
 export const paymentStatus = async (req, res) => {
-  const eventId = req.body.eventId;
+  const eventId = req.params.eventid;
   const userEmail = req.user.email;
+
+  console.log("event" ,eventId);
 
   if (!eventId) {
     return res.status(400).json({ message: 'Event ID is required' });

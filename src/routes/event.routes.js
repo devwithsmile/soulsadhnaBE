@@ -78,7 +78,7 @@ const router = express.Router();
  */
 router.get('/', listEvents);
 
-router.get('/payments', authenticateUser, paymentStatus);
+router.get('/payments/:eventid', authenticateUser, paymentStatus);
 
 
 /**
